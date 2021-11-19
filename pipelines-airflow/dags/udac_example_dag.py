@@ -5,7 +5,7 @@ from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators import (StageToRedshiftOperator, LoadFactOperator,
                                 LoadDimensionOperator, DataQualityOperator)
 from airflow.operators.postgres_operator import PostgresOperator
-from helpers import SqlQueries, SqlCreates
+from helpers import SqlQueries, stmt_dict
 
 # AWS_KEY = os.environ.get('AWS_KEY')
 # AWS_SECRET = os.environ.get('AWS_SECRET')
@@ -31,48 +31,41 @@ dag = DAG('udac_example_dag',
         )
 
 start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
+finish_create_tables = DummyOperator(task_id='Finish_create_tables',  dag=dag)
 
+# create tables
+for sql_key, sql_stmt in stmt_dict.items():
 
-list_sqlstms = [
-    SqlCreates.CREATE_ARTISTS_TABLE_SQL,
-    SqlCreates.CREATE_SONGPLAYS_TABLE_SQL,
-    SqlCreates.CREATE_SONGS_TABLE_SQL,
-    SqlCreates.CREATE_STAGING_EVENTS_TABLE_SQL,
-    SqlCreates.CREATE_STAGING_SONGS_TABLE_SQL,
-    SqlCreates.CREATE_TIME_TABLE_SQL,
-    SqlCreates.CREATE_USERS_TABLE_SQL
-]
+    create_table = PostgresOperator(
+        task_id=sql_key,
+        dag=dag,
+        postgres_conn_id="redshift",
+        sql=sql_stmt
+    )
 
-create_stage_events_table = PostgresOperator(
-    task_id='Create_stage_events_table',
-    dag=dag,
-    postgres_conn_id="redshift",
-    sql=SqlCreates.CREATE_STAGING_EVENTS_TABLE_SQL
-)
-
-create_stage_songs_table = PostgresOperator(
-    task_id='Create_stage_songs_table',
-    dag=dag,
-    postgres_conn_id="redshift",
-    sql=SqlCreates.CREATE_STAGING_SONGS_TABLE_SQL
-)
+    create_table >> finish_create_tables
+    
 
 stage_events_to_redshift = StageToRedshiftOperator(
     task_id='Stage_events',
     dag=dag,
     redshift_conn_id="redshift",
     aws_credentials_id="aws_credentials",
-    table="events",
+    table="staging_events",
     s3_bucket="udacity-dend",
     s3_key="log_data",
-    format='JSON',
-    delimiter="",
-    ignore_headers="",
+    file_format='json',
 )
 
 stage_songs_to_redshift = StageToRedshiftOperator(
     task_id='Stage_songs',
-    dag=dag
+    dag=dag,
+    redshift_conn_id="redshift",
+    aws_credentials_id="aws_credentials",
+    table="staging_songs",
+    s3_bucket="udacity-dend",
+    s3_key="log_data",
+    file_format='json'
 )
 
 load_songplays_table = LoadFactOperator(
@@ -108,14 +101,9 @@ run_quality_checks = DataQualityOperator(
 end_operator = DummyOperator(task_id='Stop_execution',  dag=dag)
 
 
-start_operator >> create_stage_events_table 
-start_operator >> create_stage_songs_table 
+finish_create_tables >> [stage_events_to_redshift, stage_songs_to_redshift]
 
-create_stage_events_table >> stage_events_to_redshift
-create_stage_songs_table >> stage_songs_to_redshift
-
-stage_events_to_redshift >> load_songplays_table
-stage_songs_to_redshift >> load_songplays_table
+[stage_events_to_redshift, stage_songs_to_redshift] >> load_songplays_table
 
 load_songplays_table >> load_song_dimension_table
 load_songplays_table >> load_user_dimension_table

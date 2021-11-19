@@ -1,6 +1,6 @@
-class SqlCreates:
-
-    CREATE_ARTISTS_TABLE_SQL = """
+stmt_dict = {}
+    
+stmt_dict['CREATE_ARTISTS_TABLE_SQL'] = """
     CREATE TABLE public.artists (
         artistid varchar(256) NOT NULL,
         name varchar(256),
@@ -10,7 +10,7 @@ class SqlCreates:
     );
     """
 
-    CREATE_SONGPLAYS_TABLE_SQL = """
+stmt_dict['CREATE_SONGPLAYS_TABLE_SQL'] = """
     CREATE TABLE public.songplays (
         playid varchar(32) NOT NULL,
         start_time timestamp NOT NULL,
@@ -23,9 +23,9 @@ class SqlCreates:
         user_agent varchar(256),
         CONSTRAINT songplays_pkey PRIMARY KEY (playid)
     );
-    """
+    """,
 
-    CREATE_SONGS_TABLE_SQL = """
+stmt_dict['CREATE_SONGS_TABLE_SQL'] = """
     CREATE TABLE public.songs (
         songid varchar(256) NOT NULL,
         title varchar(256),
@@ -36,7 +36,7 @@ class SqlCreates:
     );
     """
 
-    CREATE_STAGING_EVENTS_TABLE_SQL = """
+stmt_dict['CREATE_STAGING_EVENTS_TABLE_SQL'] = """
     CREATE TABLE public.staging_events (
         artist varchar(256),
         auth varchar(256),
@@ -59,7 +59,7 @@ class SqlCreates:
     );
     """
 
-    CREATE_STAGING_SONGS_TABLE_SQL = """
+stmt_dict['CREATE_STAGING_SONGS_TABLE_SQL'] = """
     CREATE TABLE public.staging_songs (
         num_songs int4,
         artist_id varchar(256),
@@ -74,7 +74,7 @@ class SqlCreates:
     );
     """
 
-    CREATE_TIME_TABLE_SQL = """
+stmt_dict['CREATE_TIME_TABLE_SQL'] = """
     CREATE TABLE public."time" (
         start_time timestamp NOT NULL,
         "hour" int4,
@@ -87,7 +87,7 @@ class SqlCreates:
     ) ;
     """
 
-    CREATE_USERS_TABLE_SQL = """
+stmt_dict['CREATE_USERS_TABLE_SQL'] = """
     CREATE TABLE public.users (
         userid int4 NOT NULL,
         first_name varchar(256),
