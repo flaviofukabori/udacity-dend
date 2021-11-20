@@ -10,9 +10,6 @@ from helpers import SqlQueries, stmt_dict
 # AWS_KEY = os.environ.get('AWS_KEY')
 # AWS_SECRET = os.environ.get('AWS_SECRET')
 
-#s3://udacity-dend/log_data
-#s3://udacity-dend/song_data
-
 default_args = {
     'owner': 'udacity',
     'start_date': datetime(2019, 1, 12),
