@@ -43,6 +43,7 @@ for sql_key, sql_stmt in stmt_dict.items():
         sql=sql_stmt
     )
 
+    start_operator >> create_table
     create_table >> finish_create_tables
     
 
@@ -70,36 +71,78 @@ stage_songs_to_redshift = StageToRedshiftOperator(
 
 load_songplays_table = LoadFactOperator(
     task_id='Load_songplays_fact_table',
-    dag=dag
+    dag=dag,
+    redshift_conn_id="redshift",
+    table="songplays",
+    load_query=SqlQueries.songplay_table_insert
 )
 
 load_user_dimension_table = LoadDimensionOperator(
     task_id='Load_user_dim_table',
-    dag=dag
+    dag=dag,
+    redshift_conn_id="redshift",
+    table="users",
+    load_query=SqlQueries.user_table_insert
 )
 
 load_song_dimension_table = LoadDimensionOperator(
     task_id='Load_song_dim_table',
-    dag=dag
+    dag=dag,
+    redshift_conn_id="redshift",
+    table="songs",
+    load_query=SqlQueries.song_table_insert
 )
 
 load_artist_dimension_table = LoadDimensionOperator(
     task_id='Load_artist_dim_table',
-    dag=dag
+    dag=dag,
+    redshift_conn_id="redshift",
+    table="artists",
+    load_query=SqlQueries.artist_table_insert
 )
 
 load_time_dimension_table = LoadDimensionOperator(
     task_id='Load_time_dim_table',
-    dag=dag
+    dag=dag,
+    redshift_conn_id="redshift",
+    table="time",
+    load_query=SqlQueries.time_table_insert
 )
 
-run_quality_checks = DataQualityOperator(
-    task_id='Run_data_quality_checks',
-    dag=dag
+songs_quality_checks = DataQualityOperator(
+    task_id='Run_data_quality_checks_songs',
+    dag=dag,
+    redshift_conn_id="redshift",
+    table='songs'
+)
+
+users_quality_checks = DataQualityOperator(
+    task_id='Run_data_quality_checks_users',
+    dag=dag,
+    redshift_conn_id="redshift",
+    table='users'
+)
+
+artists_quality_checks = DataQualityOperator(
+    task_id='Run_data_quality_checks_artists',
+    dag=dag,
+    redshift_conn_id="redshift",
+    table='artists'
+)
+
+time_quality_checks = DataQualityOperator(
+    task_id='Run_data_quality_checks_time',
+    dag=dag,
+    redshift_conn_id="redshift",
+    table='time'
 )
 
 end_operator = DummyOperator(task_id='Stop_execution',  dag=dag)
 
+## Graph Dependencies
+
+# "Start_operator", "create_table", and "finish_create_tables" are already defined
+# at the begining of the script
 
 finish_create_tables >> [stage_events_to_redshift, stage_songs_to_redshift]
 
@@ -110,9 +153,12 @@ load_songplays_table >> load_user_dimension_table
 load_songplays_table >> load_artist_dimension_table
 load_songplays_table >> load_time_dimension_table 
 
-load_song_dimension_table >> run_quality_checks
-load_user_dimension_table >> run_quality_checks
-load_artist_dimension_table >> run_quality_checks
-load_time_dimension_table >> run_quality_checks
+load_song_dimension_table >> songs_quality_checks
+load_user_dimension_table >> users_quality_checks
+load_artist_dimension_table >> artists_quality_checks
+load_time_dimension_table >> time_quality_checks
 
-run_quality_checks >> end_operator
+[songs_quality_checks, 
+    users_quality_checks,
+    artists_quality_checks,
+    time_quality_checks] >> end_operator
