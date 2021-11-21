@@ -1,4 +1,4 @@
-from airflow.contrib.hooks.aws_hook import AwsHook
+from airflow.providers.amazon.aws.hooks.base_aws import AwsBaseHook
 from airflow.hooks.postgres_hook import PostgresHook
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
@@ -37,18 +37,19 @@ class StageToRedshiftOperator(BaseOperator):
             FROM '{}'
             ACCESS_KEY_ID '{}'
             SECRET_ACCESS_KEY '{}'
-            '{}' 
+            {}
+            region 'us-west-2'
         """
 
         if self.file_format == 'json':
-            additional_args = 'JSON'
+            additional_args = """format as JSON 'auto'"""
         else:
             additional_args = """
                 IGNOREHEADER {self.ignore_headers} 
                 DELIMITER {self.delimiter}
                 """
         
-        formatted_sql = StageToRedshiftOperator.copy_sql.format(
+        formatted_sql = copy_sql.format(
             self.table,
             self.s3_path,
             self.credentials.access_key,
@@ -61,7 +62,7 @@ class StageToRedshiftOperator(BaseOperator):
 
     def execute(self, context):
         self.log.info('StageToRedshiftOperator not implemented yet')
-        aws_hook = AwsHook(self.aws_credentials_id)
+        aws_hook = AwsBaseHook(aws_conn_id = self.aws_credentials_id, client_type='s3')
         self.credentials = aws_hook.get_credentials()
         redshift = PostgresHook(postgres_conn_id=self.redshift_conn_id)
 

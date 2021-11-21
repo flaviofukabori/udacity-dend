@@ -8,13 +8,10 @@ from operators import (StageToRedshiftOperator, LoadFactOperator,
                                 LoadDimensionOperator, DataQualityOperator)
 from helpers import SqlQueries, stmt_dict
 
-# AWS_KEY = os.environ.get('AWS_KEY')
-# AWS_SECRET = os.environ.get('AWS_SECRET')
 
 default_args = {
-    'owner': 'udacity',
+    'owner': 'flaviofukabori',
     'start_date': datetime(2019, 1, 12),
-    
     'depends_on_past': False,
     'retries':3,
     'retries_delay':timedelta(minutes=5),
@@ -22,16 +19,17 @@ default_args = {
     'catchup':False
 }
 
-dag = DAG('udac_example_dag',
+dag = DAG('Main_songplays_dag6', 
           default_args=default_args,
           description='Load and transform data in Redshift with Airflow',
-          schedule_interval='0 * * * *'
+          schedule_interval='@once'
+          #schedule_interval='*/5 * * * *'    # every 5 minutes
         )
 
 start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
 finish_create_tables = DummyOperator(task_id='Finish_create_tables',  dag=dag)
 
-# create tables
+# create database tables
 for sql_key, sql_stmt in stmt_dict.items():
 
     create_table = PostgresOperator(
@@ -63,7 +61,7 @@ stage_songs_to_redshift = StageToRedshiftOperator(
     aws_credentials_id="aws_credentials",
     table="staging_songs",
     s3_bucket="udacity-dend",
-    s3_key="log_data",
+    s3_key="song_data",
     file_format='json'
 )
 
