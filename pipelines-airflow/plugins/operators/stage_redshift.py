@@ -42,7 +42,7 @@ class StageToRedshiftOperator(BaseOperator):
         """
 
         if self.file_format == 'json':
-            additional_args = """format as JSON 'auto'"""
+            additional_args = """format as JSON 'auto ignorecase'"""
         else:
             additional_args = """
                 IGNOREHEADER {self.ignore_headers} 

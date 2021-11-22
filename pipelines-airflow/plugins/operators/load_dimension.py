@@ -21,8 +21,12 @@ class LoadDimensionOperator(BaseOperator):
     def execute(self, context):
         redshift_hook = PostgresHook(self.redshift_conn_id)
         redshift_hook.run("""
-            TRUNCATE {self.table};
-            INSERT INTO {self.table}
-            SELECT {self.load_query}
-            """
+            TRUNCATE {};
+            INSERT INTO {}
+            {}
+            """.format(
+                self.table,
+                self.table,
+                self.load_query
+            )
         )

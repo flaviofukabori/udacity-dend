@@ -19,7 +19,7 @@ default_args = {
     'catchup':False
 }
 
-dag = DAG('Main_songplays_dag6', 
+dag = DAG('Main_songplays_dag', 
           default_args=default_args,
           description='Load and transform data in Redshift with Airflow',
           schedule_interval='@once'
@@ -61,7 +61,7 @@ stage_songs_to_redshift = StageToRedshiftOperator(
     aws_credentials_id="aws_credentials",
     table="staging_songs",
     s3_bucket="udacity-dend",
-    s3_key="song_data",
+    s3_key="song_data/A/I/J",
     file_format='json'
 )
 
